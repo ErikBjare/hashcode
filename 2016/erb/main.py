@@ -42,25 +42,28 @@ def main():
     """Customer orders"""
     number_of_orders = input_int()
     deliverables = []
-    for _ in range(number_of_orders):
+    for order_id, _ in enumerate(range(number_of_orders)):
         position = input_intpair()
         number_of_products_ordered = input_int()
         products_ordered = input_ints()
-        deliverables.extend([Deliverable(position, product_id, classes.product_weights[product_id]) for product_id in products_ordered])
+        deliverables.extend([Deliverable(position, product_id, order_id, classes.product_weights[product_id]) for product_id in products_ordered])
 
     try:
-        print(input())
+        input()
     except EOFError:
         pass
     else:
         print("There was something left in the input data, exiting")
         exit(1)
 
-    print("Warehouses: {}, Drones: {}, Deliverables: {}".format(len(classes.warehouses), n_drones, len(deliverables)))
-    print("Drone capacity: {}".format(Drone.capacity))
+    #print("Warehouses: {}, Drones: {}, Deliverables: {}".format(len(classes.warehouses), n_drones, len(deliverables)))
+    #print("Drone capacity: {}".format(Drone.capacity))
+
+    def get_drones_by_turns():
+        return sorted(drones, key=lambda d: d.turn)
 
     def get_first_available_drone():
-        return sorted(drones, key=lambda d: d.turn)[0]
+        return get_drones_by_turns()[0]
 
     def get_closest_deliverable(pos):
         return sorted(deliverables, key=lambda o: distance_to(o.destination_pos, pos))
@@ -73,18 +76,16 @@ def main():
             if warehouse.has_in_stock(product_id):
                 return warehouse
 
-    print("First available drone: {}".format(get_first_available_drone()))
 
     for deliverable in sorted(deliverables, key=lambda d: d.priority()):
         # TODO: Get closest available drone
         drone = get_first_available_drone()
         drone.load(deliverable, get_closest_warehouse_with_product(deliverable.destination_pos, deliverable._product_id))
-        drone.deliver(deliverable.destination_pos)
+        drone.deliver(deliverable)
         #print("Delivered")
 
-    print("Done, all delivered")
-
-
+    #print(get_drones_by_turns()[-1].turn, deadline)
+    #print("Done, all delivered")
 
     """
     min_turn = 0
