@@ -8,6 +8,7 @@ drone_capacity = 0
 
 product_weights = []
 warehouses = []
+deliverables = []
 
 WAREHOUSE_ID = 0
 DRONE_ID = 0
@@ -57,6 +58,9 @@ class Warehouse(Positionable):
     def has_in_stock(self, product_id) -> bool:
         return self._stock[product_id] > 0
 
+    def take_from_stock(self, product_id, n=1):
+        self._stock[product_id] -= n
+
 
 def availability(product_id, destination):
     av = 0
@@ -97,6 +101,7 @@ class Deliverable(Turndependent):
 
     def priority(self):
         # TODO: Bench + vs *
+        #return availability(self._product_id, self._destination_pos)
         return 1/self._order_size * availability(self._product_id, self._destination_pos)
 
 
@@ -126,13 +131,35 @@ class Drone(Positionable, Turndependent):
     def load(self, deliverable: Deliverable, warehouse: Warehouse, n=1):
         self._at_turn += 1+ceil(distance_to(self.pos, warehouse.pos))
         self.pos = warehouse.pos
-        print("{} L {} {}".format(self.id, warehouse.id, deliverable._product_id, n))
-        pass
 
-    def deliver(self, deliverable, n=1):
+        def deliverables_in_order(order_id):
+            return filter(lambda d: d._order_id == order_id, deliverables)
+
+        def deliverables_in_order_of_type(order_id, product_id):
+            return list(filter(lambda d: d._product_id == product_id, deliverables_in_order(order_id)))
+
+
+        deliverables_to_pickup = deliverables_in_order_of_type(deliverable._order_id, deliverable._product_id)
+        if len(deliverables_to_pickup) < 1:
+            raise Exception
+        available_n = len(deliverables_to_pickup)
+        l = []
+        while sum(map(lambda d: d.weight, l)) <= self.capacity and len(deliverables_to_pickup) > 0:
+            d = deliverables_to_pickup.pop()
+            deliverables.remove(d)
+            l.append(d)
+        n = len(l)
+        #if n > 1:
+        #    print("asd: ", n)
+        warehouse.take_from_stock(deliverable._product_id, n)
+        self.n = n
+        print("{} L {} {} {}".format(self.id, warehouse.id, deliverable._product_id, n))
+        return n
+
+    def deliver(self, deliverable):
         self._at_turn += 1+ceil(distance_to(self.pos, deliverable._destination_pos))
         self.pos = deliverable._destination_pos
-        print("{} D {} {}".format(self.id, deliverable._order_id, deliverable._product_id, n))
+        print("{} D {} {} {}".format(self.id, deliverable._order_id, deliverable._product_id, self.n))
         pass
 
     def unload(self, warehouse: Warehouse):

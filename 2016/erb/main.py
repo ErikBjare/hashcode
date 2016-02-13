@@ -41,12 +41,11 @@ def main():
 
     """Customer orders"""
     number_of_orders = input_int()
-    deliverables = []
     for order_id, _ in enumerate(range(number_of_orders)):
         position = input_intpair()
         number_of_products_ordered = input_int()
         products_ordered = input_ints()
-        deliverables.extend([Deliverable(position, product_id, order_id, classes.product_weights[product_id]) for product_id in products_ordered])
+        classes.deliverables.extend([Deliverable(position, product_id, order_id, classes.product_weights[product_id]) for product_id in products_ordered])
 
     try:
         input()
@@ -65,8 +64,13 @@ def main():
     def get_first_available_drone():
         return get_drones_by_turns()[0]
 
+    def get_optimal_drone(destination):
+        cost = [drone.turn + distance_to(drone.pos, destination) for drone in drones]
+        i = cost.index(min(cost))
+        return drones[i]
+
     def get_closest_deliverable(pos):
-        return sorted(deliverables, key=lambda o: distance_to(o.destination_pos, pos))
+        return sorted(classes.deliverables, key=lambda o: distance_to(o.destination_pos, pos))
 
     def get_warehouses_sorted_by_distance(pos):
         return sorted(classes.warehouses, key=lambda o: distance_to(o.pos, pos))
@@ -76,15 +80,21 @@ def main():
             if warehouse.has_in_stock(product_id):
                 return warehouse
 
-
-    for deliverable in sorted(deliverables, key=lambda d: d.priority()):
+    sdel = sorted(classes.deliverables, key=lambda d: d.priority())
+    while True:
+        if len(sdel) < 1:
+            break
+        deliverable = sdel.pop(0)
         # TODO: Get closest available drone
-        drone = get_first_available_drone()
-        drone.load(deliverable, get_closest_warehouse_with_product(deliverable.destination_pos, deliverable._product_id))
+        warehouse = get_closest_warehouse_with_product(deliverable.destination_pos, deliverable._product_id)
+        drone = get_optimal_drone(warehouse.pos)
+        loaded = drone.load(deliverable, warehouse)
+        for _ in range(loaded-1):
+            sdel.pop(0)
         drone.deliver(deliverable)
         #print("Delivered")
 
-    #print(get_drones_by_turns()[-1].turn, deadline)
+    print(get_drones_by_turns()[-1].turn, deadline)
     #print("Done, all delivered")
 
     """
