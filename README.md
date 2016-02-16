@@ -2,10 +2,10 @@
 
 ### 2016
 
-Team:
+Team (in no particular order):
 
  - Måns Magnusson ([exoji2e](https://github.com/exoji2e), captain)
- - Erk Bjäreholt ([ErikBjare](https://github.com/ErikBjare))
+ - Erik Bjäreholt ([ErikBjare](https://github.com/ErikBjare))
  - Viktor Brange
  - Johannes Ahnlide
 
